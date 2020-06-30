@@ -2,9 +2,24 @@
   <div>
     <h1>VueJS And Firebase Authentication</h1>
     <div v-if="authUser">
-      <h2>Signed in as {{authUser.email}}</h2>
-      <button @click="signOut">Sign Out</button>
+      <h2><img :src="photoUrl" :alt="displayName" width="50px">
+        Signed in as {{authUser.email}}
+        <img v-if="linkedGithub" src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.F6ZlLzRbxeotstT7oMlahAHaHl%26pid%3DApi&f=1" width="30px" />
+        <img v-if="linkedPassword" src="https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fcdn.onlinewebfonts.com%2Fsvg%2Fdownload_296750.png&f=1&nofb=1" width="30px" />
+      </h2>
 
+      <p>🦊 Hello, {{authUser.displayName || 'Friend'}}, we know you like {{favoriteButt || ''}} butts ^3</p>
+
+      <button @click="signOut">Sign Out</button>
+      <button v-if="!linkedGithub" @click="linkGithub">Link Github</button>
+      <button v-else @click="unlinkGithub">Unlink Github</button>
+
+      <form @submit.prevent="updateCustomDetails">
+        <h2>Update Favorite Butt</h2>
+        <input v-model="favoriteButt" placeholder="Your favorite but, round, white, blacc,. etc...">
+        <button>Update</button>
+      </form>
+      
       <form @submit.prevent="updateProfile">
         <h2>Update Profile</h2>
         <input v-model="displayName" placeholder="Your name here...">
@@ -60,8 +75,19 @@ export default {
       displayName: null,
       photoUrl: null,
       newPassword: null,
+      favoriteButt: null,
       authUser: null
     };
+  },
+
+  computed: {
+    linkedGithub() {
+      return this.authUser.providerData.find(provider => provider.providerId === 'github.com')
+    },
+
+    linkedPassword() {
+      return this.authUser.providerData.find(provider => provider.providerId === 'password')
+    }
   },
 
   methods: {
@@ -95,10 +121,22 @@ export default {
         .catch(error => alert(":( " + error.message));
     },
 
+    linkGithub() {
+      const provider = new window.firebase.auth.GithubAuthProvider();
+      this.authUser
+        .linkWithPopup(provider)
+        .then(data => console.log(data.user, data.credential.accessToken))
+        .catch(error => alert(":( " + error.message));
+    },
+
+    unlinkGithub() {
+      this.authUser.unlink('github.com')
+    },
+
     updateProfile() {
       this.authUser
         .updateProfile({
-          displayName: this.diplayName,
+          displayName: this.displayName,
           photoURL: this.photoUrl
         })
         .then(data => console.log(data))
@@ -116,6 +154,11 @@ export default {
         .updatePassword(this.newPassword)
         .then(()=> this.newPassword = null)
         .catch(error => alert(":( " + error.message));
+    },
+
+    updateCustomDetails() {
+      window.firebase.database().ref('users').child(this.authUser.uid)
+        .update({ favoriteButt: this.favoriteButt })
     }
   },
 
@@ -126,6 +169,11 @@ export default {
         this.displayName = user.displayName;
         this.photoUrl = user.photoURL;
         this.email = user.email;
+        window.firebase.database().ref('users').child(user.uid).once('value', snap => {
+          if (snap.val()) this.favoriteButt = snap.val().favoriteButt;
+          // Vue.set(this.authUser, 'favoriteButt', this.favoriteButt)
+        })
+        .catch(error => alert(":( " + error.message));
       }
     });
   }
