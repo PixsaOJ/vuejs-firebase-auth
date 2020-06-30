@@ -66,7 +66,7 @@ export default {
 
   methods: {
     register() {
-      firebase
+      window.firebase
         .auth()
         .createUserWithEmailAndPassword(this.email, this.password)
         // .then((user) => this.authUser = user)
@@ -74,7 +74,7 @@ export default {
     },
 
     signIn() {
-      firebase
+      window.firebase
         .auth()
         .signInWithEmailAndPassword(this.email, this.password)
         // .then((user) => this.authUser = user)
@@ -82,13 +82,13 @@ export default {
     },
 
     signOut() {
-      firebase.auth().signOut();
+      window.firebase.auth().signOut();
       // .then(() => this.authUser = null);
     },
 
     signInWithGitHub() {
-      const provider = new firebase.auth.GithubAuthProvider();
-      firebase
+      const provider = new window.firebase.auth.GithubAuthProvider();
+      window.firebase
         .auth()
         .signInWithPopup(provider)
         .then(data => console.log(data.user, data.credential.accessToken))
@@ -120,7 +120,7 @@ export default {
   },
 
   created() {
-    firebase.auth().onAuthStateChanged(user => {
+    window.firebase.auth().onAuthStateChanged(user => {
       this.authUser = user;
       if (user) {
         this.displayName = user.displayName;
